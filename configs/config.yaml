@@ -1,0 +1,8 @@
+input_dir: "input_images"
+output_dir: "output"
+roi:
+  y1: 200
+  y2: 600
+  x1: 300
+  x2: 900
+allowed_extensions: [".png", ".jpg", ".jpeg"]

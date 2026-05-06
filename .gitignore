@@ -1,0 +1,4 @@
+/output/cropped/*
+/input_images/*
+/.venv
+/checkpoints
