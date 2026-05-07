@@ -2,3 +2,6 @@
 /input_images/*
 /.venv
 /checkpoints
+/src/__pycache__/*
+/sorted_output/*
+sorted_output.zip
