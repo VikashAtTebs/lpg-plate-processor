@@ -2,7 +2,39 @@ import cv2
 import numpy as np
 import pytesseract
 from rapidfuzz import fuzz
+import re
 
+def has_clear_inscription(text):
+    import re
+
+    tl = text.lower()
+    compact = tl.replace(" ", "")
+
+    cleaned = re.sub(r"[^a-z0-9./ -]", " ", tl)
+    tokens = [t for t in cleaned.split() if len(t) >= 2]
+
+    digit_tokens = [t for t in tokens if any(c.isdigit() for c in t)]
+    alpha_tokens = [t for t in tokens if any(c.isalpha() for c in t)]
+
+    plate_cues = 0
+    cues = [
+        "sr.no", "sr no", "srno", "serial",
+        "batch", "test", "date",
+        "gross", "tare", "wt", "kg"
+    ]
+
+    for cue in cues:
+        if cue in tl or cue in compact:
+            plate_cues += 1
+
+    # Accept if there is enough meaningful OCR evidence
+    if plate_cues >= 2 and len(tokens) >= 4:
+        return True
+
+    if plate_cues >= 1 and len(digit_tokens) >= 2 and len(alpha_tokens) >= 2:
+        return True
+
+    return False
 
 def best_score(text, patterns):
     """Return max fuzzy partial_ratio between text and any pattern."""
@@ -126,9 +158,12 @@ def has_fuzzy(text, patterns, threshold=80):
 def classify_plate_image(img_bgr):
     text = ocr_text_multi(img_bgr)
     tl = text.lower()
-    
-        # --- HARD SR RULE: if we clearly see SR.NO / SR NO / SRNO anywhere,
-    # always treat as Serial_No, regardless of batch/test ---
+
+    # Reject unclear / unreadable plates
+    if not has_clear_inscription(text):
+        return "rejected"
+
+    # Hard SR rule
     compact = tl.replace(" ", "")
     if (
         "sr.no" in tl
@@ -141,7 +176,7 @@ def classify_plate_image(img_bgr):
     serial_patterns = [
         "sr.no", "sr.no.", "sr. no", "sr no", "sr-no", "srno",
         "s r.no", "s r no",
-        "serial no", "serial no.", "SR.NO."
+        "serial no", "serial no."
     ]
 
     batch_patterns = [
@@ -156,23 +191,13 @@ def classify_plate_image(img_bgr):
     ]
 
     serial_score = best_score(tl, serial_patterns)
-    batch_score  = best_score(tl, batch_patterns)
-    test_score   = best_score(tl, test_patterns)
+    batch_score = best_score(tl, batch_patterns)
+    test_score = best_score(tl, test_patterns)
 
     S_MIN = 70
     B_MIN = 70
     T_MIN = 65
 
-    # --- NEW: serial override ---
-    # If serial evidence is clearly strongest, force Serial_No
-    if (
-        serial_score >= S_MIN
-        and serial_score >= batch_score + 10
-        and serial_score >= test_score + 10
-    ):
-        return "Serial_No"
-
-    # --- existing logic (Batch+Test > Batch > Serial) ---
     if batch_score >= B_MIN and test_score >= T_MIN:
         return "Batch_No_Test_Date"
 

@@ -59,67 +59,67 @@ def main():
         best_image = None           # numpy image to save
 
         # 1a. classification on cropped plate (if we have one)
-        if cropped_path is not None and os.path.exists(cropped_path):
-            crop_img = cv2.imread(cropped_path)
-            if crop_img is not None:
-                label_crop = classify_plate_image(crop_img)
-                print("  cropped label:", label_crop)
-                if label_crop != "rejected":
-                    best_label = label_crop
-                    best_source = "crop"
-                    best_image = crop_img
+        # if cropped_path is not None and os.path.exists(cropped_path):
+        #     crop_img = cv2.imread(cropped_path)
+        #     if crop_img is not None:
+        #         label_crop = classify_plate_image(crop_img)
+        #         print("  cropped label:", label_crop)
+        #         if label_crop != "rejected":
+        #             best_label = label_crop
+        #             best_source = "crop"
+        #             best_image = crop_img
 
-        # --- 2) fallback: original image if cropped attempt failed ---
-        if best_label == "rejected":
-            label_orig = classify_plate_image(orig)
-            print("  original label:", label_orig)
-            if label_orig != "rejected":
-                best_label = label_orig
-                best_source = "orig"
-                best_image = orig
+        # # --- 2) fallback: original image if cropped attempt failed ---
+        # if best_label == "rejected":
+        #     label_orig = classify_plate_image(orig)
+        #     print("  original label:", label_orig)
+        #     if label_orig != "rejected":
+        #         best_label = label_orig
+        #         best_source = "orig"
+        #         best_image = orig
 
-        # --- 3) route based on final label ---
-        if best_label == "rejected" or best_image is None:
-            print("  -> rejected")
-            target_dir = REJECTED_DIR
-            target_dir.mkdir(parents=True, exist_ok=True)
+        # # --- 3) route based on final label ---
+        # if best_label == "rejected" or best_image is None:
+        #     print("  -> rejected")
+        #     target_dir = REJECTED_DIR
+        #     target_dir.mkdir(parents=True, exist_ok=True)
 
-            # move original as-is to rejected
-            shutil.move(str(img_path), target_dir / img_path.name)
-            continue
+        #     # move original as-is to rejected
+        #     shutil.move(str(img_path), target_dir / img_path.name)
+        #     continue
 
-        # choose target folder
-        if best_label == "Serial_No":
-            target_dir = SERIAL_DIR
-        elif best_label == "Batch_No_Test_Date":
-            target_dir = BATCH_TEST_DIR
-        elif best_label == "Batch_No":
-            target_dir = BATCH_ONLY_DIR
-        else:
-            target_dir = REJECTED_DIR
+        # # choose target folder
+        # if best_label == "Serial_No":
+        #     target_dir = SERIAL_DIR
+        # elif best_label == "Batch_No_Test_Date":
+        #     target_dir = BATCH_TEST_DIR
+        # elif best_label == "Batch_No":
+        #     target_dir = BATCH_ONLY_DIR
+        # else:
+        #     target_dir = REJECTED_DIR
 
-        target_dir.mkdir(parents=True, exist_ok=True)
+        # target_dir.mkdir(parents=True, exist_ok=True)
 
-        # --- 4) save ONLY the image that produced this label ---
+        # # --- 4) save ONLY the image that produced this label ---
 
-        dest_path = target_dir / img_path.name
+        # dest_path = target_dir / img_path.name
 
-        if best_source == "crop":
-            # cropped plate gave us the label → save cropped, not original
-            print(f"  -> {best_label} (from CROPPED), saving cropped as {dest_path.name}")
-            save_horizontal(best_image, dest_path)
-        else:
-            # original image gave us the label → rotate to horizontal and save
-            print(f"  -> {best_label} (from ORIGINAL), saving rotated original as {dest_path.name}")
-            save_horizontal(best_image, dest_path)
+        # if best_source == "crop":
+        #     # cropped plate gave us the label → save cropped, not original
+        #     print(f"  -> {best_label} (from CROPPED), saving cropped as {dest_path.name}")
+        #     save_horizontal(best_image, dest_path)
+        # else:
+        #     # original image gave us the label → rotate to horizontal and save
+        #     print(f"  -> {best_label} (from ORIGINAL), saving rotated original as {dest_path.name}")
+        #     save_horizontal(best_image, dest_path)
 
-        # Remove the original from input_images after sorting
-        if img_path.exists():
-            os.remove(str(img_path))
+        # # Remove the original from input_images after sorting
+        # if img_path.exists():
+        #     os.remove(str(img_path))
 
-        # Optionally, clean up cropped file to save space
-        if cropped_path is not None and os.path.exists(cropped_path):
-            os.remove(cropped_path)
+        # # Optionally, clean up cropped file to save space
+        # if cropped_path is not None and os.path.exists(cropped_path):
+        #     os.remove(cropped_path)
 
 
 if __name__ == "__main__":
